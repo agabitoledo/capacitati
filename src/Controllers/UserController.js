@@ -1,30 +1,50 @@
 const db = require('../../db');
+const bcrypt = require('bcrypt');
 
 //Create User
-exports.post = (req, res, next) => {
-   const body = req.body;
-   db("users").insert(body).then((data => {
-      console.log("body", body);
-      console.log("data", data);
-      return (
-         res.status(200).send({
-            ...body,
-            id: data,
-         })
-      )
-   }))
+exports.post = async (req, res, next) => {
+   const { body } = req;
+   const hash = await bcrypt.hashSync(body.password, 10)
+   const userData = {
+      firstName: body.firstName,
+      lastName: body.lastName,
+      email: body.email,
+      phone: body.phone,
+      cpf: body.cpf,
+      password: hash,
+   }
+   // const result = await bcrypt.compareSync(body.password, hash);
+   // const resultFalse = await bcrypt.compareSync("fsdfsdf", hash);
+   db("users").insert(userData).then((data) => {
+      res.status(201).send({
+         ...userData,
+         id: data[0],
+      });
+   })
 }
 
 //Update User
-exports.put = (req, res, next) => {
-   let id = req.params.id;
-   res.status(201).send(`Rota PUT com ID! --> ${id}`);
+exports.put = async (req, res, next) => {
+   const { body } = req;
+   const id = req.params.id;
+   let userData = {
+     ...body,
+   }
+   if (body.password) {
+     const hash = await bcrypt.hashSync(body.password, 10)
+     userData.password = hash;
+   }
+   await db('users').update(userData).where({ id: id });
+   const updatedUser = await db('users').where({ id: id });
+   return res.status(200).json(...updatedUser);
 };
 
 //Delete User
 exports.delete = (req, res, next) => {
-   let id = req.params.id;
-   res.status(200).send(`Rota DELETE com ID! --> ${id}`);
+   const id = req.params.id;
+   db('users').del().where({ idUsers : id}).then(() => {
+   res.status(200).json({ message: "Deleted" });
+   })
 };
 
 //Get User list
@@ -39,6 +59,15 @@ exports.get = (req, res, next) => {
 
 //Get User by Id
 exports.getById = (req, res, next) => {
-   let id = req.params.id;
-   res.status(200).send(`Rota GET com ID! ${id}`);
+   const id = req.params.id;
+   db.select().table('users').where({ idUsers : id})
+   .then((data) => {
+     if(data.length === 0) {
+       return res.status(404).json({
+         error: 'User does not exist'
+       });
+     }else {
+       res.status(200).send(data);
+     }
+   })
 };
