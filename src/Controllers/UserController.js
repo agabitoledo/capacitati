@@ -1,5 +1,37 @@
 const db = require('../../db');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+
+//Login
+exports.login = async (req, res, next) => {
+   const { email, password } = req.body;
+
+   if(!email || !password) return res.status(400).send({msg: 'Campos inválidos'})
+
+   const user = await db('users').select('password').where('email', email).first();
+   
+   //TODO:Transformar a validação de senha e usuário com uma só mensagem para que haja mais segurança e o usuário não saiba quais dos dois foi o incorreto
+   if(!user) return res.status(404).res.send({ error: 'user not found'});
+
+   if(!await bcrypt.compareSync(password, user.password)){
+      return res.status(404).res.send({msg: 'Invalid password'})
+   }
+
+   const loggedUser = await db('users').select('*').where('email', email).first();
+   
+   delete loggedUser.password //para que não fique salvo
+   
+   //TODO: Criar .env
+   const token = jwt.sign(
+      { user: loggedUser.id },
+      "segredo", {
+         expiresIn: 500
+      }
+   );
+
+   return res.status(200).send({user: {...loggedUser}, token});
+}
+
 
 //Create User
 exports.post = async (req, res, next) => {
