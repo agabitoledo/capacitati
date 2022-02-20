@@ -7,4 +7,6 @@ module.exports = (app) => {
     app.delete('/user/:id', UserController.delete);
     app.get('/user', UserController.get);
     app.get('/user/:id', UserController.getById);
+    app.post('/user/:email', UserController.sendPasswordResetEmail);
+    app.post('/user/reset/:id/:token', UserController.receiveNewPassword);
 }
