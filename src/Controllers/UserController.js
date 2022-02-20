@@ -2,6 +2,7 @@ const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const transporter = require('./../config/transporter');
+
 //Login
 exports.login = async (req, res, next) => {
    const { email, password } = req.body;
@@ -95,6 +96,18 @@ exports.getById = (req, res, next) => {
       })
 };
 
+const usePasswordHashToMakeToken = ({ password: passwordHash, id }) => {
+   const secret = `${passwordHash}-${id}`;
+   const token = jwt.sign(
+       { id },
+       secret,
+       { expiresIn: 3600 } // 1 hour
+   );
+
+   return token;
+};
+
+// Enviando o email com o reset de senha
 exports.sendPasswordResetEmail = async (req, res) => {
    const { email } = req.params;
    let user;
@@ -106,6 +119,7 @@ exports.sendPasswordResetEmail = async (req, res) => {
    } catch (error) {
       res.status(404).json('No user with that email');
    }
+   //
    const token = usePasswordHashToMakeToken(user);
    const mailOptions = {
       to: email,
