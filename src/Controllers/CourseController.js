@@ -1,6 +1,6 @@
-const db = require('./../../db.js');
+const db = require('../config/db');
 
-// Create User
+// Create Course
 exports.post = (req, res) => {
   const body = req.body;
   db("courses").insert(body).then((data) => {
@@ -12,7 +12,7 @@ exports.post = (req, res) => {
   });
 };
 
-// Update User
+// Update Course
 exports.put = async (req, res) => {
   let id = req.params.id;
   await db("courses").update(req.body).where({ idCourse: id });
@@ -20,7 +20,7 @@ exports.put = async (req, res) => {
   return res.status(200).json(...updateUser);
 }
 
-// Delete User
+// Delete Course
 exports.delete = (req, res) => {
   let id = req.params.id;
   db('courses').del().where({ idCourse : id}).then(() => {
@@ -28,21 +28,21 @@ exports.delete = (req, res) => {
   })
 }
 
-// Get User List
+// Get Course List
 exports.get = (req, res) => {
   db.select().table('courses').then(data => {
     res.status(200).send(JSON.stringify(data));
   });
 }
 
-// Get User by Id
+// Get Course by Id
 exports.getById = (req, res) => {
   let id = req.params.id;
-  db.select().table('courses').where({'id_courses': id})
+  db.select().table('courses').where({'idCourses': id})
   .then((data) => {
     if(data.length === 0) {
       return res.status(404).json({
-        error: 'User does not exist'
+        error: 'Course does not exist'
       });
     }else {
       res.status(200).send(data);
