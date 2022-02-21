@@ -1,7 +1,7 @@
 const multer = require('multer');
 const fs = require('fs');
 
-const dir = '../videos';
+const dir = ('./../../videos');
 
 if(!fs.existsSync(dir)){
     fs.mkdirSync(dir, {recursive: true});
