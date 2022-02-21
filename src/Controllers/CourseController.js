@@ -1,4 +1,4 @@
-const db = require('../config/db');
+const db = require('../../config/db');
 
 // Create Course
 exports.post = (req, res) => {
@@ -50,3 +50,11 @@ exports.getById = (req, res) => {
   })
 }
 
+//Post video path 
+exports.videoUpload = async (req, res) => {
+  console.log(req.params);
+  const { id } = req.params;
+  await db('courses').where({ 'idCourses' : id }).first().update({ videoPath: req.file.path});
+  res.send('uploaded successfully');
+
+}

@@ -1,7 +1,7 @@
-const db = require('../config/db');
+const db = require('../../config/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const transporter = require('./../config/transporter');
+const transporter = require('../../config/transporter');
 
 //Login
 exports.login = async (req, res, next) => {
