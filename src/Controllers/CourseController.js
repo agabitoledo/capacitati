@@ -39,7 +39,7 @@ exports.get = (req, res) => {
 // Get Course by Id
 exports.getById = (req, res) => {
   let id = req.params.id;
-  db.select().table('courses').where({ 'idCourses': id })
+  db.select().table('courses').where({ 'courseId': id })
     .then((data) => {
       if (data.length === 0) {
         return res.status(404).json({
@@ -55,7 +55,7 @@ exports.getById = (req, res) => {
 exports.videoUpload = async (req, res) => {
   console.log(req.params);
   const { id } = req.params;
-  await db('courses').where({ 'idCourses': id }).first().update({ videoPath: req.file.path });
+  await db('courses').where({ 'courseId': id }).first().update({ videoPath: req.file.path });
   res.send('uploaded successfully');
 
 }
@@ -63,7 +63,7 @@ exports.videoUpload = async (req, res) => {
 //Get Video
 exports.getVideo = async (req, res) => {
   const { id } = req.params;
-  const movieFile = await db('courses').where({ 'idCourses': id }).first();
+  const movieFile = await db('courses').where({ 'courseId': id }).first();
   console.log(movieFile.videoPath);
 
   fs.stat(movieFile.videoPath, (error, stats) => {

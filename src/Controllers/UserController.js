@@ -66,7 +66,7 @@ exports.put = async (req, res, next) => {
 //Delete User
 exports.delete = (req, res, next) => {
    const id = req.params.id;
-   db('users').del().where({ idUsers: id }).then(() => {
+   db('users').del().where({ userId: id }).then(() => {
       res.status(200).json({ message: "Deleted" });
    })
 };
@@ -84,7 +84,7 @@ exports.get = (req, res, next) => {
 //Get User by Id
 exports.getById = (req, res, next) => {
    const id = req.params.id;
-   db.select().table('users').where({ idUsers: id })
+   db.select().table('users').where({ userId: id })
       .then((data) => {
          if (data.length === 0) {
             return res.status(404).json({
@@ -147,14 +147,14 @@ exports.receiveNewPassword = async (req, res) => {
 
    const user = await db('users')
       .select()
-      .where('idUsers', id)
+      .where('userId', id)
       .first();
 
    const secret = `${user.password}-${id}`;
    const payload = jwt.decode(token, secret);
    if (payload.id === user.id) {
       const hash = await bcrypt.hashSync(password, 10);
-      db('users').update({ password: hash }).where({ 'idUsers': id }).then(() => res.status(202).json('Password changed accepted'))
+      db('users').update({ password: hash }).where({ 'userId': id }).then(() => res.status(202).json('Password changed accepted'))
    } else {
       res.status(404).json('Invalid user')
    }
