@@ -1,43 +1,39 @@
 const db = require('../../config/db');
 const fs = require('fs');
+const { json } = require("express/lib/response");
 
-// Create Course
-exports.post = (req, res) => {
+exports.createCourse = (req, res) => {
   const body = req.body;
   db("courses").insert(body).then((data) => {
     console.log(data);
     res.status(201).send({
       ...body,
-      id: data,
+      courseId: data,
     });
   });
 };
 
-// Update Course
-exports.put = async (req, res) => {
+exports.updateCourse = async (req, res) => {
   let id = req.params.id;
-  await db("courses").update(req.body).where({ idCourse: id });
-  const updateUser = await db("courses").where({ idCourse: id });
+  await db("courses").update(req.body).where({ courseId: id });
+  const updateUser = await db("courses").where({ courseId: id });
   return res.status(200).json(...updateUser);
 }
 
-// Delete Course
-exports.delete = (req, res) => {
+exports.deleteCourse = (req, res) => {
   let id = req.params.id;
-  db('courses').del().where({ idCourse: id }).then(() => {
+  db('courses').del().where({ courseId: id }).then(() => {
     res.status(200).json({ message: "Deleted" });
   })
 }
 
-// Get Course List
-exports.get = (req, res) => {
+exports.getCourseList = (req, res) => {
   db.select().table('courses').then(data => {
     res.status(200).send(JSON.stringify(data));
   });
 }
 
-// Get Course by Id
-exports.getById = (req, res) => {
+exports.getCourseById = (req, res) => {
   let id = req.params.id;
   db.select().table('courses').where({ 'courseId': id })
     .then((data) => {
@@ -51,16 +47,13 @@ exports.getById = (req, res) => {
     })
 }
 
-//Post video path 
-exports.videoUpload = async (req, res) => {
+exports.videoPathUpload = async (req, res, next) => {
   console.log(req.params);
   const { id } = req.params;
   await db('courses').where({ 'courseId': id }).first().update({ videoPath: req.file.path });
   res.send('uploaded successfully');
-
 }
 
-//Get Video
 exports.getVideo = async (req, res) => {
   const { id } = req.params;
   const movieFile = await db('courses').where({ 'courseId': id }).first();
@@ -69,7 +62,7 @@ exports.getVideo = async (req, res) => {
   fs.stat(movieFile.videoPath, (error, stats) => {
     if (error) { 
       console.log(error) 
-      return res.status(404).end('<h1>Movie not found </h1>');
+      return res.status(404).end('Movie not found');
     }
 
     const {range} = req.headers;

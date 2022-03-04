@@ -3,7 +3,6 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const transporter = require('../../config/transporter');
 
-//Login
 exports.login = async (req, res, next) => {
    const { email, password } = req.body;
    if (!email || !password) return res.status(400).send({ msg: 'Campos inválidos' })
@@ -25,8 +24,7 @@ exports.login = async (req, res, next) => {
    return res.status(200).send({ user: { ...loggedUser }, token });
 }
 
-//Create User
-exports.post = async (req, res, next) => {
+exports.createUser = async (req, res, next) => {
    const { body } = req;
    const hash = await bcrypt.hashSync(body.password, 10)
    const userData = {
@@ -47,8 +45,7 @@ exports.post = async (req, res, next) => {
    })
 }
 
-//Update User
-exports.put = async (req, res, next) => {
+exports.updateUser = async (req, res, next) => {
    const { body } = req;
    const id = req.params.id;
    let userData = {
@@ -58,21 +55,19 @@ exports.put = async (req, res, next) => {
       const hash = await bcrypt.hashSync(body.password, 10)
       userData.password = hash;
    }
-   await db('users').update(userData).where({ id: id });
-   const updatedUser = await db('users').where({ id: id });
+   await db('users').update(userData).where({ userId: id });
+   const updatedUser = await db('users').where({ userId: id });
    return res.status(200).json(...updatedUser);
 };
 
-//Delete User
-exports.delete = (req, res, next) => {
+exports.deleteUser = (req, res, next) => {
    const id = req.params.id;
    db('users').del().where({ userId: id }).then(() => {
       res.status(200).json({ message: "Deleted" });
    })
 };
 
-//Get User list
-exports.get = (req, res, next) => {
+exports.getUserList = (req, res, next) => {
    db.select().table("users").then(data => {
       console.log(data)
       return (
@@ -81,8 +76,7 @@ exports.get = (req, res, next) => {
    })
 };
 
-//Get User by Id
-exports.getById = (req, res, next) => {
+exports.getUserById = (req, res, next) => {
    const id = req.params.id;
    db.select().table('users').where({ userId: id })
       .then((data) => {
@@ -119,7 +113,7 @@ exports.sendPasswordResetEmail = async (req, res) => {
    } catch (error) {
       res.status(404).json('No user with that email');
    }
-   //
+   
    const token = usePasswordHashToMakeToken(user);
    const mailOptions = {
       to: email,
@@ -137,7 +131,6 @@ exports.sendPasswordResetEmail = async (req, res) => {
          }
       })
    }
-
    sendEmail();
 }
 
