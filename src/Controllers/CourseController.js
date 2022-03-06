@@ -47,26 +47,61 @@ exports.getCourseById = (req, res) => {
     })
 }
 
+exports.createVideoClass = async (req, res) => {
+  const { body } = req;
+  db('videos').insert({ ...body, videoId: `${body.courseId}-${body.classNumber}` }).then((data) => {
+    console.log('data', data);
+    res.status(201).send({
+      ...body,
+      videoId: `${body.courseId}-${body.classNumber}`,
+    });
+  });
+};
+
+exports.getListClass = async (req, res) => {
+  const { courseId } = req.params;
+  await db('videos').where({ courseId: courseId }).then((data) => {
+    if (data.length === 0) {
+      return res.status(400).json({ error: 'course does not exist or is empty' });
+    }
+    // const sortedData = data.sort((a, b) => (
+    //   a.number >= b.number ? 1 : -1
+    // ));
+    // return res.status(200).send(sortedData);
+  })
+};
+
+exports.getCLass = async (req, res) => {
+  const { courseId, classNumber } = req.params;
+
+  await db('videos').where({ courseId, classNumber }).first().then((data) => {
+    if (data.length === 0) { 
+      return res.status(400).json({ error: 'class does not exist' }) 
+    }
+    return res.status(200).send(data)
+  })
+}
+
 exports.videoPathUpload = async (req, res, next) => {
   console.log(req.params);
-  const { id } = req.params;
-  await db('courses').where({ 'courseId': id }).first().update({ videoPath: req.file.path });
+  const { courseId, classNumber } = req.params;
+  await db('videos').where({ courseId, classNumber: classNumber }).first().update({ videoPath: req.file.path });
   res.send('uploaded successfully');
 }
 
 exports.getVideo = async (req, res) => {
-  const { id } = req.params;
-  const movieFile = await db('courses').where({ 'courseId': id }).first();
-  console.log(movieFile.videoPath);
+  const { courseId, classNumber } = req.params;
+  const movieFile = await db('videos').where({ courseId, classNumber: classNumber }).first();
 
+  if (!movieFile || !movieFile.videoPath) { return res.status(404).end('<h1>Video não encontrado</h1>'); }
   fs.stat(movieFile.videoPath, (error, stats) => {
-    if (error) { 
-      console.log(error) 
-      return res.status(404).end('Movie not found');
+    if (error) {
+      console.log(error)
+      return res.status(404).end('video not found');
     }
 
-    const {range} = req.headers;
-    const {size} = stats;
+    const { range } = req.headers;
+    const { size } = stats;
     const start = Number((range || '').replace(/bytes=/, '').split('-')[0]);
     const end = size - 1;
     const chunkSize = (end - start) + 1;
@@ -80,7 +115,7 @@ exports.getVideo = async (req, res) => {
     });
     res.status(206);
 
-    const stream = fs.createReadStream(movieFile.videoPath, {start, end});
+    const stream = fs.createReadStream(movieFile.videoPath, { start, end });
     stream.on('open', () => stream.pipe(res));
     stream.on('error', (streamErr) => res.end(streamErr));
     return null;

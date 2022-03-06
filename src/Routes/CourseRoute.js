@@ -1,7 +1,6 @@
 const CourseController = require('../Controllers/CourseController');
 const upload = require('../../config/commom');
 const fs = require('fs');
-const multer = require('multer');
 
 module.exports = (app) => {
   //rota para teste de stream
@@ -9,11 +8,19 @@ module.exports = (app) => {
     fs.readFile('./tests/index.html', (error, html) => res.end(html));
   })
   app.post('/course', CourseController.createCourse);
+  app.post('/course/video', CourseController.createVideoClass);
+
+
   app.put('/course/:id', CourseController.updateCourse);
   app.delete('/course/:id', CourseController.deleteCourse);
   app.get('/course', CourseController.getCourseList);
   app.get('/course/:id', CourseController.getCourseById);
 
-  app.post('/course/upload/:id', upload.single('video'), CourseController.videoPathUpload); 
-  app.get('/course/video/:id',CourseController.getVideo); 
+  app.get('course/list/:courseId', CourseController.getListClass);//Rever
+  app.get('/course/video/:courseId/:classNumber', CourseController.getCLass); //
+
+  app.post('/course/upload/:courseId/:classNumber', upload.single('videoPath'), CourseController.videoPathUpload); //
+  app.get('/course/:courseId/:classNumber',CourseController.getVideo); //
+
+
 };
