@@ -49,18 +49,18 @@ exports.getCourseById = (req, res) => {
 
 exports.createVideoClass = async (req, res) => {
   const { body } = req;
-  db('videos').insert({ ...body, videoId: `${body.courseId}-${body.classNumber}` }).then((data) => {
+  db('videos').insert({ ...body, videoId: `${body.courseIdRefVideos}-${body.classNumber}` }).then((data) => {
     console.log('data', data);
     res.status(201).send({
       ...body,
-      videoId: `${body.courseId}-${body.classNumber}`,
+      videoId: `${body.courseIdRefVideos}-${body.classNumber}`,
     });
   });
 };
 
 exports.getListClass = async (req, res) => {
   const { courseId } = req.params;
-  await db('videos').where({ courseId: courseId }).then((data) => {
+  await db('videos').where({ 'courseIdRefVideos': courseId }).then((data) => {
     if (data.length === 0) {
       return res.status(400).json({ error: 'course does not exist or is empty' });
     }
@@ -74,9 +74,9 @@ exports.getListClass = async (req, res) => {
 exports.getCLass = async (req, res) => {
   const { courseId, classNumber } = req.params;
 
-  await db('videos').where({ courseId, classNumber }).first().then((data) => {
-    if (data.length === 0) { 
-      return res.status(400).json({ error: 'class does not exist' }) 
+  await db('videos').where({ courseIdRefVideos: courseId, classNumber }).first().then((data) => {
+    if (data.length === 0) {
+      return res.status(400).json({ error: 'class does not exist' })
     }
     return res.status(200).send(data)
   })
@@ -85,13 +85,13 @@ exports.getCLass = async (req, res) => {
 exports.videoPathUpload = async (req, res, next) => {
   console.log(req.params);
   const { courseId, classNumber } = req.params;
-  await db('videos').where({ courseId, classNumber: classNumber }).first().update({ videoPath: req.file.path });
+  await db('videos').where({ courseIdRefVideos: courseId, classNumber: classNumber }).first().update({ videoPath: req.file.path });
   res.send('uploaded successfully');
 }
 
 exports.getVideo = async (req, res) => {
   const { courseId, classNumber } = req.params;
-  const movieFile = await db('videos').where({ courseId, classNumber: classNumber }).first();
+  const movieFile = await db('videos').where({ courseIdRefVideos: courseId, classNumber: classNumber }).first();
 
   if (!movieFile || !movieFile.videoPath) { return res.status(404).end('<h1>Video não encontrado</h1>'); }
   fs.stat(movieFile.videoPath, (error, stats) => {
@@ -120,4 +120,28 @@ exports.getVideo = async (req, res) => {
     stream.on('error', (streamErr) => res.end(streamErr));
     return null;
   });
+}
+
+exports.checkProgress = (req, res) => {
+  const { courseId, userId } = req.params;
+  db('progress').where({ courseId, userId }).first().then((data) => {
+    if (!data) {
+      return res.status(200).send({ lastSeen: 0 });
+    }
+    return res.status(200).send({ lastSeen: data.lastSeen || 0 });
+  })
+}
+
+exports.updateProgress = async (req, res) => {
+  const { courseId, userId } = req.params;
+  const { body } = req;
+  const data = await db('progress').where({ courseId, userId }).first();
+
+  if (!data) {
+    console.log('criado')
+    await db('progress').insert({ courseId, userId, lastSeen: body.lastSeen, progressId: `${userId}-${courseId}` })
+  } else {
+    await db('progress').where({ courseId, userId }).first().update({ lastSeen: body.lastSeen })
+  }
+  return res.status(200).send('progress updated')
 }
