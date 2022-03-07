@@ -94,9 +94,8 @@ exports.videoPathUpload = async (req, res, next) => {
 exports.getVideo = async (req, res) => {
   const { courseId, classNumber } = req.params;
   const movieFile = await db('videos').where({ courseIdRefVideos: courseId, classNumber: classNumber }).first();
-
-  if (!movieFile || !movieFile.videoPath) { return res.status(404).end('<h1>Video não encontrado</h1>'); }
   console.log('entrou no controller errado')
+  if (!movieFile || !movieFile.videoPath) { return res.status(404).end('<h1>Video não encontrado</h1>'); }
   fs.stat(movieFile.videoPath, (error, stats) => {
     if (error) {
       console.log(error)
