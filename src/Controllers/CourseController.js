@@ -1,7 +1,6 @@
 const db = require('../../config/db');
 const fs = require('fs');
 const { json } = require("express/lib/response");
-const { resolveAny } = require('dns');
 
 exports.createCourse = (req, res) => {
   const body = req.body;
