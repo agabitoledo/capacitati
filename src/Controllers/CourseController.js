@@ -1,6 +1,7 @@
 const db = require('../../config/db');
 const fs = require('fs');
 const { json } = require("express/lib/response");
+const pdf = require('html-pdf');
 
 exports.createCourse = (req, res) => {
   const body = req.body;
@@ -200,4 +201,31 @@ exports.setCompleted = async (req, res) => {
   }
   await db('course_status').where({ courseIdRefCourseStatus: courseId, userIdRefCourseStatus: userId }).first().update({ completionDate: body.completionDate, status: 2 })
   return res.status(200).send('course completed');
+}
+
+exports.generatePDF = async(req, res) => {
+  const { courseId, userId} = req.params;
+  const course = await db.select().table('courses').where({courseId}).first();
+  const user = await db.select().table('users').where({userId}).first();
+  //TODO: Transformar em arquivo HTML e estilizar
+  const html = `
+  <div style='position: absolute; height: 50%; width: 100%; top: 25%; right:0' >
+    <h4 style='font-size: 28px; text-align:center'>HITSS ON</h4>
+    <h1 style='font-size: 28px; text-align:center'>Certificado</h1>
+    <h2 style='font-size: 28px; text-align:center'>${user.firstName} ${user.firstName}</h2>
+    <h3 style='font-size: 28px; text-align:center'>Concluiu o curso ${course.title}</h3>
+  </div>
+  `;
+
+  const options = {
+    type: 'pdf',
+    format:'A4',
+    orientation: 'landscape',
+  }
+
+  pdf.create(html, options).toBuffer((err, buffer) => {
+    if(err) return res.status(500).json(err);
+
+    return res.end(buffer)
+  })
 }
