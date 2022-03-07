@@ -13,10 +13,19 @@ module.exports = (app) => {
   app.delete('/course/:id', CourseController.deleteCourse);
   app.get('/course', CourseController.getCourseList);
   app.get('/course/:id', CourseController.getCourseById);
+
+
+
+  app.get('/course/status/:courseId/:userId', CourseController.checkUserStatus);
+  app.post('/course/add/:courseId/:userId', CourseController.addUserToCourse); //
+  app.post('/course/status/:courseId/:userId', CourseController.setCompleted);
+
+
   app.get('course/list/:courseId', CourseController.getListClass);//Rever
   app.get('/course/video/:courseId/:classNumber', CourseController.getCLass);
   app.post('/course/upload/:courseId/:classNumber', upload.single('videoPath'), CourseController.videoPathUpload);
   app.get('/course/:courseId/:classNumber',CourseController.getVideo);
   app.get('/course/progress/:courseId/:userId', CourseController.checkProgress);
   app.post('/course/progress/:courseId/:userId', CourseController.updateProgress);
+  
 };

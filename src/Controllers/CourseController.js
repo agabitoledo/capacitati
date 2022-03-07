@@ -1,6 +1,7 @@
 const db = require('../../config/db');
 const fs = require('fs');
 const { json } = require("express/lib/response");
+const { resolveAny } = require('dns');
 
 exports.createCourse = (req, res) => {
   const body = req.body;
@@ -60,14 +61,15 @@ exports.createVideoClass = async (req, res) => {
 
 exports.getListClass = async (req, res) => {
   const { courseId } = req.params;
-  await db('videos').where({ 'courseIdRefVideos': courseId }).then((data) => {
+  await db('videos').where({ courseIdRefVideos: courseId }).then((data) => {
     if (data.length === 0) {
+      console.log('entrou no controller certo')
       return res.status(400).json({ error: 'course does not exist or is empty' });
     }
-    // const sortedData = data.sort((a, b) => (
-    //   a.number >= b.number ? 1 : -1
-    // ));
-    // return res.status(200).send(sortedData);
+    const sortedData = data.sort((a, b) => (
+      a.number >= b.number ? 1 : -1
+    ));
+    return res.status(200).send(sortedData);
   })
 };
 
@@ -94,6 +96,7 @@ exports.getVideo = async (req, res) => {
   const movieFile = await db('videos').where({ courseIdRefVideos: courseId, classNumber: classNumber }).first();
 
   if (!movieFile || !movieFile.videoPath) { return res.status(404).end('<h1>Video não encontrado</h1>'); }
+  console.log('entrou no controller errado')
   fs.stat(movieFile.videoPath, (error, stats) => {
     if (error) {
       console.log(error)
@@ -144,4 +147,59 @@ exports.updateProgress = async (req, res) => {
     await db('progress').where({ courseId, userId }).first().update({ lastSeen: body.lastSeen })
   }
   return res.status(200).send('progress updated')
+}
+
+
+exports.checkUserStatus = (req, res) => {
+  const { courseId, userId } = req.params
+  const status = [
+    {
+      code: 0,
+      status: 'Não registrado'
+    },
+    {
+      code: 1,
+      status: 'Cursando'
+    },
+    {
+      code: 2,
+      status: 'Concluído'
+    }
+  ];
+  db('course_status').where({ courseIdRefCourseStatus: courseId, userIdRefCourseStatus: userId }).first().then((data) => {
+    console.log('checando')
+    if (!data) {
+      console.log('entrou no if')
+      return res.status(200).send(status[0])
+    }
+    return res.status(200).send(status[data.status])
+  })
+}
+
+exports.addUserToCourse = async (req, res) => {
+  const { courseId, userId } = req.params;
+  const data = await db('course_status').where({ courseIdRefCourseStatus: courseId, userIdRefCourseStatus: userId }).first();
+  // 1 = Cursando / 2 = Concluido
+  if (!data) {
+    console.log('status criado');
+    await db('course_status').insert({ courseIdRefCourseStatus: courseId, userIdRefCourseStatus: userId, status: 1 });
+  }
+  else {
+    await db('course_status').where({ courseIdRefCourseStatus: courseId, userIdRefCourseStatus: userId }).first().update({ status: 1 })
+  }
+  return res.status(200).send('user added to course');
+}
+
+
+exports.setCompleted = async (req, res) => {
+  const { courseId, userId } = req.params;
+  const { body } = req;
+  // 1 = Cursando / 2 = Concluido
+  const data = await db('course_status').where({ courseIdRefCourseStatus: courseId, userIdRefCourseStatus: userId }).first();
+  console.log('concluido')
+  if (!data) {
+    return res.status(400).json({ error: 'user not in this course' });
+  }
+  await db('course_status').where({ courseIdRefCourseStatus: courseId, userIdRefCourseStatus: userId }).first().update({ completionDate: body.completionDate, status: 2 })
+  return res.status(200).send('course completed');
 }
