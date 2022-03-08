@@ -17,9 +17,10 @@ exports.login = async (req, res, next) => {
    //TODO: Criar .env
    const token = jwt.sign(
       { user: loggedUser.id },
-      "segredo", {
-      expiresIn: 500
-   }
+      process.env.JWT_SECRET,
+      {
+         expiresIn: 500
+      }
    );
    return res.status(200).send({ user: { ...loggedUser }, token });
 }
@@ -93,9 +94,9 @@ exports.getUserById = (req, res, next) => {
 const usePasswordHashToMakeToken = ({ password: passwordHash, id }) => {
    const secret = `${passwordHash}-${id}`;
    const token = jwt.sign(
-       { id },
-       secret,
-       { expiresIn: 3600 } // 1 hour
+      { id },
+      secret,
+      { expiresIn: 3600 } // 1 hour
    );
 
    return token;
@@ -113,7 +114,7 @@ exports.sendPasswordResetEmail = async (req, res) => {
    } catch (error) {
       res.status(404).json('No user with that email');
    }
-   
+
    const token = usePasswordHashToMakeToken(user);
    const mailOptions = {
       to: email,
