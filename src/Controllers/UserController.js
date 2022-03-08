@@ -1,9 +1,8 @@
-const db = require('../config/db');
+const db = require('../../config/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const transporter = require('./../config/transporter');
+const transporter = require('../../config/transporter');
 
-//Login
 exports.login = async (req, res, next) => {
    const { email, password } = req.body;
    if (!email || !password) return res.status(400).send({ msg: 'Campos inválidos' })
@@ -18,15 +17,15 @@ exports.login = async (req, res, next) => {
    //TODO: Criar .env
    const token = jwt.sign(
       { user: loggedUser.id },
-      "segredo", {
-      expiresIn: 500
-   }
+      process.env.JWT_SECRET,
+      {
+         expiresIn: 500
+      }
    );
    return res.status(200).send({ user: { ...loggedUser }, token });
 }
 
-//Create User
-exports.post = async (req, res, next) => {
+exports.createUser = async (req, res, next) => {
    const { body } = req;
    const hash = await bcrypt.hashSync(body.password, 10)
    const userData = {
@@ -47,8 +46,7 @@ exports.post = async (req, res, next) => {
    })
 }
 
-//Update User
-exports.put = async (req, res, next) => {
+exports.updateUser = async (req, res, next) => {
    const { body } = req;
    const id = req.params.id;
    let userData = {
@@ -58,21 +56,19 @@ exports.put = async (req, res, next) => {
       const hash = await bcrypt.hashSync(body.password, 10)
       userData.password = hash;
    }
-   await db('users').update(userData).where({ id: id });
-   const updatedUser = await db('users').where({ id: id });
+   await db('users').update(userData).where({ userId: id });
+   const updatedUser = await db('users').where({ userId: id });
    return res.status(200).json(...updatedUser);
 };
 
-//Delete User
-exports.delete = (req, res, next) => {
+exports.deleteUser = (req, res, next) => {
    const id = req.params.id;
-   db('users').del().where({ idUsers: id }).then(() => {
+   db('users').del().where({ userId: id }).then(() => {
       res.status(200).json({ message: "Deleted" });
    })
 };
 
-//Get User list
-exports.get = (req, res, next) => {
+exports.getUserList = (req, res, next) => {
    db.select().table("users").then(data => {
       console.log(data)
       return (
@@ -81,10 +77,9 @@ exports.get = (req, res, next) => {
    })
 };
 
-//Get User by Id
-exports.getById = (req, res, next) => {
+exports.getUserById = (req, res, next) => {
    const id = req.params.id;
-   db.select().table('users').where({ idUsers: id })
+   db.select().table('users').where({ userId: id })
       .then((data) => {
          if (data.length === 0) {
             return res.status(404).json({
@@ -99,9 +94,9 @@ exports.getById = (req, res, next) => {
 const usePasswordHashToMakeToken = ({ password: passwordHash, id }) => {
    const secret = `${passwordHash}-${id}`;
    const token = jwt.sign(
-       { id },
-       secret,
-       { expiresIn: 3600 } // 1 hour
+      { id },
+      secret,
+      { expiresIn: 3600 } // 1 hour
    );
 
    return token;
@@ -119,7 +114,7 @@ exports.sendPasswordResetEmail = async (req, res) => {
    } catch (error) {
       res.status(404).json('No user with that email');
    }
-   //
+
    const token = usePasswordHashToMakeToken(user);
    const mailOptions = {
       to: email,
@@ -137,7 +132,6 @@ exports.sendPasswordResetEmail = async (req, res) => {
          }
       })
    }
-
    sendEmail();
 }
 
@@ -147,14 +141,14 @@ exports.receiveNewPassword = async (req, res) => {
 
    const user = await db('users')
       .select()
-      .where('idUsers', id)
+      .where('userId', id)
       .first();
 
    const secret = `${user.password}-${id}`;
    const payload = jwt.decode(token, secret);
    if (payload.id === user.id) {
       const hash = await bcrypt.hashSync(password, 10);
-      db('users').update({ password: hash }).where({ 'idUsers': id }).then(() => res.status(202).json('Password changed accepted'))
+      db('users').update({ password: hash }).where({ 'userId': id }).then(() => res.status(202).json('Password changed accepted'))
    } else {
       res.status(404).json('Invalid user')
    }
