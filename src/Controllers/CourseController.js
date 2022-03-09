@@ -87,8 +87,7 @@ exports.getCLass = async (req, res) => {
 exports.videoPathUpload = async (req, res, next) => {
   console.log(req.params);
   const { courseId, classNumber } = req.params;
-  console.log('Funcionou o video upload');
-  //await db('videos').where({ courseIdRefVideos: courseId, classNumber: classNumber }).first().update({ videoPath: req.file.path || req.file.key});
+  await db('videos').where({ courseIdRefVideos: courseId, classNumber: classNumber }).first().update({ videoPath: req.file.path || req.file.key});
   res.send('uploaded successfully');
 }
 
