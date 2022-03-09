@@ -10,6 +10,6 @@ app.use(cors());
 app.use(express.json());
 require('./src/Routes/index')(app);
 
-app.listen(config.PORT, config.HOST, () => {
+app.listen(config.PORT, () => {
     console.log(`APP LISTENING ON http://${config.HOST}:${config.PORT}`);
 });
