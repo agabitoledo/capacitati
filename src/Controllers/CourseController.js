@@ -87,7 +87,8 @@ exports.getCLass = async (req, res) => {
 exports.videoPathUpload = async (req, res, next) => {
   console.log(req.params);
   const { courseId, classNumber } = req.params;
-  await db('videos').where({ courseIdRefVideos: courseId, classNumber: classNumber }).first().update({ videoPath: req.file.path });
+  console.log('Funcionou o video upload');
+  //await db('videos').where({ courseIdRefVideos: courseId, classNumber: classNumber }).first().update({ videoPath: req.file.path || req.file.key});
   res.send('uploaded successfully');
 }
 
@@ -96,6 +97,22 @@ exports.getVideo = async (req, res) => {
   const movieFile = await db('videos').where({ courseIdRefVideos: courseId, classNumber: classNumber }).first();
   console.log('entrou no controller errado')
   if (!movieFile || !movieFile.videoPath) { return res.status(404).end('<h1>Video não encontrado</h1>'); }
+
+  if(process.env.STORAGE_TYPE === 's3') {
+    const s3 = new aws.S3();
+    aws.config.update({
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS.KEY,
+    });
+    const url = s3.getSignedUrl('getObject', {
+      Bucket: process.env.BUCKET_NAME,
+      Key: movieFile.videoPath,
+      Expires: 3600 * 3,
+    });
+    console.log('url: ', url);
+    return res.status(200).send(url);
+  }
+
   fs.stat(movieFile.videoPath, (error, stats) => {
     if (error) {
       console.log(error)
