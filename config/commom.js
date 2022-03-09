@@ -3,7 +3,7 @@ const fs = require('fs');
 const multerS3 = require('multer-s3');
 const aws = require('aws-sdk');
 
-const dir = ('../src/uploads/videos');
+const dir = ('./uploads/videos');
 if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
 }
