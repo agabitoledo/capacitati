@@ -1,4 +1,5 @@
 const CourseController = require('../Controllers/CourseController');
+const express = require('express');
 const upload = require('../../config/commom');
 const fs = require('fs');
 
@@ -15,7 +16,9 @@ module.exports = (app) => {
   app.post('/course/status/:courseId/:userId', CourseController.setCompleted);
   app.get('/course/list/:courseId', CourseController.getListClass);
   app.get('/course/video/:courseId/:classNumber', CourseController.getCLass);
+
   app.post('/course/upload/:courseId/:classNumber', upload.single('videoPath'), CourseController.videoPathUpload);
+
   app.get('/course/progress/:courseId/:userId', CourseController.checkProgress);
   app.post('/course/progress/:courseId/:userId', CourseController.updateProgress);
   app.get('/course/certificate/:courseId/:userId', CourseController.generatePDF);

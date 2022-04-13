@@ -60,17 +60,22 @@ exports.createVideoClass = async (req, res) => {
 };
 
 exports.getListClass = async (req, res) => {
-  const { courseId } = req.params;
-  await db('videos').where({ courseIdRefVideos: courseId }).then((data) => {
-    if (data.length === 0) {
-      console.log('entrou no controller certo')
-      return res.status(400).json({ error: 'course does not exist or is empty' });
-    }
-    const sortedData = data.sort((a, b) => (
-      a.number >= b.number ? 1 : -1
-    ));
-    return res.status(200).send(sortedData);
-  })
+  try {
+    const { courseId } = req.params;
+    await db('videos').where({ courseIdRefVideos: courseId }).then((data) => {
+      if (data.length === 0) {
+        console.log('entrou no controller certo')
+        return res.status(400).json({ error: 'course does not exist or is empty' });
+      }
+      const sortedData = data.sort((a, b) => (
+        a.number >= b.number ? 1 : -1
+      ));
+      return res.status(200).send(sortedData);
+    })
+  }
+  catch (error) {
+    console.log(error)
+  }
 };
 
 exports.getCLass = async (req, res) => {
@@ -85,9 +90,16 @@ exports.getCLass = async (req, res) => {
 }
 
 exports.videoPathUpload = async (req, res, next) => {
-  console.log(req.params);
-  const { courseId, classNumber } = req.params;
-  await db('videos').where({ courseIdRefVideos: courseId, classNumber: classNumber }).first().update({ videoPath: req.file.path || req.file.key});
+  try {
+    console.log(req.file);
+    const { courseId, classNumber } = req.params;
+    await db('videos')
+      .where({ courseIdRefVideos: courseId, classNumber })
+      .first()
+      .update({ videoPath: req.file.path || req.file.key });
+  } catch (error) {
+    console.log('uploadcontroller', error)
+  }
   res.send('uploaded successfully');
 }
 
@@ -97,7 +109,7 @@ exports.getVideo = async (req, res) => {
   console.log('entrou no controller errado')
   if (!movieFile || !movieFile.videoPath) { return res.status(404).end('<h1>Video não encontrado</h1>'); }
 
-  if(process.env.STORAGE_TYPE === 's3') {
+  if (process.env.STORAGE_TYPE === 's3') {
     const s3 = new aws.S3();
     aws.config.update({
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -219,10 +231,10 @@ exports.setCompleted = async (req, res) => {
   return res.status(200).send('course completed');
 }
 
-exports.generatePDF = async(req, res) => {
-  const { courseId, userId} = req.params;
-  const course = await db.select().table('courses').where({courseId}).first();
-  const user = await db.select().table('users').where({userId}).first();
+exports.generatePDF = async (req, res) => {
+  const { courseId, userId } = req.params;
+  const course = await db.select().table('courses').where({ courseId }).first();
+  const user = await db.select().table('users').where({ userId }).first();
   //TODO: Transformar em arquivo HTML e estilizar
   const html = `
   <div style='position: absolute; height: 50%; width: 100%; top: 25%; right:0' >
@@ -235,12 +247,12 @@ exports.generatePDF = async(req, res) => {
 
   const options = {
     type: 'pdf',
-    format:'A4',
+    format: 'A4',
     orientation: 'landscape',
   }
 
   pdf.create(html, options).toBuffer((err, buffer) => {
-    if(err) return res.status(500).json(err);
+    if (err) return res.status(500).json(err);
 
     return res.end(buffer)
   })

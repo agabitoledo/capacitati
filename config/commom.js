@@ -8,7 +8,6 @@ if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
 }
 
-//Como será feito o armazenamento
 const fileStorageEngine = {
     local: multer.diskStorage({
         destination: (req, file, cb) => {
@@ -27,5 +26,6 @@ const fileStorageEngine = {
     })
 }
 
-const upload = multer({ storage: fileStorageEngine });
+const upload = multer({ storage: fileStorageEngine[process.env.STORAGE_TYPE] });
+
 module.exports = upload;
