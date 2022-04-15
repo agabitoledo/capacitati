@@ -2,6 +2,7 @@ const db = require('../../config/db');
 const fs = require('fs');
 const { json } = require("express/lib/response");
 const pdf = require('html-pdf');
+const aws = require('aws-sdk');
 
 exports.createCourse = (req, res) => {
   const body = req.body;
@@ -82,7 +83,7 @@ exports.getCLass = async (req, res) => {
   const { courseId, classNumber } = req.params;
 
   await db('videos').where({ courseIdRefVideos: courseId, classNumber }).first().then((data) => {
-    if (data.length === 0) {
+    if (!data || data.length === 0) {
       return res.status(400).json({ error: 'class does not exist' })
     }
     return res.status(200).send(data)
@@ -105,15 +106,15 @@ exports.videoPathUpload = async (req, res, next) => {
 
 exports.getVideo = async (req, res) => {
   const { courseId, classNumber } = req.params;
-  const movieFile = await db('videos').where({ courseIdRefVideos: courseId, classNumber: classNumber }).first();
-  console.log('entrou no controller errado')
+  const movieFile = await db('videos').where({ courseIdRefVideos: courseId, classNumber}).first();
+  //console.log('entrou no controller errado')
   if (!movieFile || !movieFile.videoPath) { return res.status(404).end('<h1>Video não encontrado</h1>'); }
 
   if (process.env.STORAGE_TYPE === 's3') {
     const s3 = new aws.S3();
     aws.config.update({
       accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: process.env.AWS_SECRET_ACCESS.KEY,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     });
     const url = s3.getSignedUrl('getObject', {
       Bucket: process.env.BUCKET_NAME,
