@@ -62,7 +62,7 @@ exports.updateUser = async (req, res, next) => {
 };
 
 exports.deleteUser = (req, res, next) => {
-   const id = req.params.id;
+   let id = req.params.id;
    db('users').del().where({ userId: id }).then(() => {
       res.status(200).json({ message: "Deleted" });
    })
